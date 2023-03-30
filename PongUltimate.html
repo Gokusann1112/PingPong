@@ -1,0 +1,307 @@
+<!-- @format --><!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ping Pong Ultimate</title>
+  </head>
+  <style>
+    body {
+      margin: 0;
+    }
+    canvas {
+      background-color: black;
+      border: outset blue 1rem;
+      border-radius: 5px;
+    }
+    button {
+      border: outset white 5px;
+    }
+    button:active {
+      border: inset white 5px;
+    }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.247);
+    }
+    input {
+      border: outset black 5px;
+    }
+
+    video {
+      object-fit: cover;
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+  </style>
+
+  <body>
+    <center>
+      <h1 id="display" style="color: black">
+        Score: ?? - - - - - - Ping Pong - - - - - - Score: ??
+      </h1>
+      <canvas id="myCanvas" height="320" width="480"></canvas>
+    </center>
+    <br />
+
+    Choose Color:
+    <input id="color" type="color" value="#FFFFFF" /><br /><br />
+    <button onclick="rainbowRGB = true">Rainbow</button>
+    <button onclick="rainbowRGB = false">No Rainbow</button>
+  </body>
+
+  <script>
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    let color = "white";
+    let score1 = 0;
+    let score2 = 0;
+    let rainbowRGB = false;
+
+    //Media and score reader
+    let paddleAudio = new Audio("Media/PingPong.mp3");
+    let deathAudio = new Audio("Media/death.mp3");
+    let player1 = new SpeechSynthesisUtterance();
+    let player2 = new SpeechSynthesisUtterance();
+    let rainbowAudio = new Audio("Media/Rainbow.mp3");
+    rainbowAudio.volume = 0.2;
+
+    let backgroundColor = "rgba(255, 255, 255, 0.192";
+
+    //Paddle
+    let paddleHeight = 60;
+    let paddleWidth = 10;
+    let paddleY = (canvas.height - paddleHeight) / 2;
+    let paddleX = 20;
+
+    let paddleY2 = (canvas.height - paddleHeight) / 2;
+    let paddleX2 = canvas.width - 20 - paddleWidth;
+
+    let LpaddleSpeed = 7;
+    let RpaddleSpeed = 7;
+
+    //Movment
+    let upPressed = false;
+    let downPressed = false;
+
+    let upPressed2 = false;
+    let downPressed2 = false;
+
+    //Ball
+    let ballRadius = 10;
+    let x = (canvas.width + ballRadius) / 2;
+    let y = (canvas.height + ballRadius) / 2;
+    let speed = 1;
+    let fx = speed;
+    let fy = speed;
+
+    function drawBall() {
+      //Ball movmet
+      x += fx;
+      y += fy;
+
+      if (x + fx > canvas.width - ballRadius || x + fx < ballRadius) {
+        if (x > canvas.width / 2) {
+          score1++;
+          deathAudio.play();
+          player1.text = "Players one score is" + score1;
+          window.speechSynthesis.speak(player1);
+        } else {
+          score2++;
+          deathAudio.play();
+          player2.text = "Players two score is" + score2;
+          window.speechSynthesis.speak(player2);
+        }
+
+        y = (canvas.height + ballRadius) / 2;
+        x = (canvas.width + ballRadius) / 2;
+      }
+      if (y + fy > canvas.height - ballRadius || y + fy < ballRadius) {
+        fy = -fy;
+      }
+
+      //Paddle bouncing
+      if (
+        x < paddleX + ballRadius + paddleWidth &&
+        y < paddleY + paddleHeight &&
+        y > paddleY
+      ) {
+        x = x + 10;
+        paddleAudio.play();
+        fx = -fx;
+        speed = speed + 0.05;
+      }
+
+      if (
+        x > paddleX2 - ballRadius &&
+        y < paddleY2 + paddleHeight &&
+        y > paddleY2
+      ) {
+        x = x - 10;
+        paddleAudio.play();
+        fx = -fx;
+        speed = speed + 0.05;
+      }
+
+      //Create Ball on each frame
+      ctx.beginPath();
+      ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawPaddle() {
+      ctx.beginPath();
+      ctx.rect(paddleX, paddleY, paddleWidth, paddleHeight);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.closePath();
+    }
+    function drawPaddle2() {
+      ctx.beginPath();
+      ctx.rect(paddleX2, paddleY2, paddleWidth, paddleHeight);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBall();
+      drawPaddle();
+      drawPaddle2();
+      paddleMovment();
+      paddleMovment2();
+      rainbow();
+
+      if (rainbowRGB == true) {
+        rainbow();
+        rainbowAudio.play();
+        document.getElementById("display").style.color = color;
+        document.body.style.backgroundColor = backgroundColor;
+        //console.log(backgroundColor);
+      } else {
+        color = document.getElementById("color").value;
+        rainbowAudio.pause();
+      }
+      canvas.style.borderColor = color;
+
+      document.getElementById("display").innerHTML =
+        "P1 Score: " +
+        score1 +
+        " - - - - - -" +
+        " Ping Pong " +
+        "- - - - - - " +
+        "Score: " +
+        score2 +
+        " P2";
+    }
+    //True RGB - Rainbow
+    let rgb1 = 255;
+    let rgb2 = 00;
+    let rgb3 = 00;
+    function rainbow() {
+      console.log("rgb1: " + rgb1 + "\nrgb2: " + rgb2 + "\nrgb3: " + rgb3);
+
+      if (rgb2 <= 254 && rgb3 == 0) {
+        rgb2++;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+      if (rgb2 == 255 && rgb1 <= 255 && rgb1 > 0 && rgb3 <= 244) {
+        rgb1--;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+      if (rgb3 <= 254 && rgb1 == 0) {
+        rgb3++;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+      if (rgb1 == 0 && rgb2 >= 0 && rgb3 == 255) {
+        rgb2--;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+      if (rgb3 >= 0 && rgb2 == 0 && rgb1 <= 254) {
+        rgb1++;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+      if (rgb1 == 255 && rgb2 == 0 && rgb3 <= 255) {
+        rgb3--;
+        color = "rgb(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ")";
+        backgroundColor =
+          "rgba(" + rgb1 + ", " + rgb2 + ", " + rgb3 + ", 0.192)";
+      }
+    }
+    //Movment Paddle
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+
+    document.addEventListener("keydown", keyDownHandler2, false);
+    document.addEventListener("keyup", keyUpHandler2, false);
+
+    function keyDownHandler(e) {
+      if (e.key == "w") {
+        upPressed = true;
+      } else if (e.key == "s") {
+        downPressed = true;
+      }
+    }
+
+    function keyUpHandler(e) {
+      if (e.key == "w") {
+        upPressed = false;
+      } else if (e.key == "s") {
+        downPressed = false;
+      }
+    }
+
+    //Paddle 2
+    function keyDownHandler2(e) {
+      if (e.key == "ArrowUp") {
+        upPressed2 = true;
+      } else if (e.key == "ArrowDown") {
+        downPressed2 = true;
+      }
+    }
+
+    function keyUpHandler2(e) {
+      if (e.key == "ArrowUp") {
+        upPressed2 = false;
+      } else if (e.key == "ArrowDown") {
+        downPressed2 = false;
+      }
+    }
+
+    function paddleMovment() {
+      if (downPressed && paddleY < canvas.height - paddleHeight) {
+        paddleY += LpaddleSpeed;
+      } else if (upPressed && paddleY > 0) {
+        paddleY -= LpaddleSpeed;
+      }
+    }
+
+    function paddleMovment2() {
+      if (downPressed2 && paddleY2 < canvas.height - paddleHeight) {
+        paddleY2 += RpaddleSpeed;
+      } else if (upPressed2 && paddleY2 > 0) {
+        paddleY2 -= RpaddleSpeed;
+      }
+    }
+
+    //Timer
+    setInterval(draw, 10);
+  </script>
+</html>
